@@ -34,8 +34,20 @@
 ```
   docker-compose up -d
 ```
-
-6. Levantar: ``` npm run start:dev ```
+6. Endpoint 
+```
+POST
+/applications/git
+```
+```
+POST
+/applications/gitlab
+```
+```
+POST
+/applications/files
+```
+7. Levantar: ``` npm run start:dev ```
 
 
 
