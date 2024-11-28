@@ -1,123 +1,62 @@
-import { Inject, Injectable, InternalServerErrorException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { join } from 'path';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { rename } from 'fs/promises';
-import { createReadStream, existsSync } from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fsExtra from 'fs-extra';
-import { ClientProxy } from '@nestjs/microservices';
-import * as fs from 'fs';
-import { NATS_SERVICE } from 'src/config';
-import { Application } from './dto/application.entity';
-import { Checkmarx } from './dto/checkmarx.entity';
-import { fileRVIA } from './interface/fileRVIA.interface';
+
+import { Scan } from './entities/scan.entity';
+import { CommonService } from '../common/common.service';
+import { fileRVIA } from './interface';
 
 @Injectable()
 export class RviadocService {
-  private readonly crviaEnvironment: number;
-    encryptionService: any;
 
   constructor(
-    @InjectRepository(Checkmarx) private readonly checkmarxRepository: Repository<Checkmarx>,
-    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
-    @InjectRepository(Application) private readonly applicationRepository: Repository<Application>,
+    @InjectRepository(Scan) private readonly scanRepository: Repository<Scan>,
+    private readonly encryptionService: CommonService
   ) {  }
 
-  async create(createCheckmarxDto: any, file:fileRVIA) {
+  async convertPDF(idu_proyecto: number, nom_aplicacion: string,idu_aplicacion: number, file:fileRVIA) {
     try {
-      const aplicacion = await this.client
-        .send({ cmd: 'get_application' }, createCheckmarxDto.idu_aplicacion)
-        .toPromise();
+      const dirName = '/sysx/bito/projects';
+      const dirAplicacion = `${dirName}/${idu_proyecto}_${nom_aplicacion}`;
+      const newPdfFileName = `checkmarx_${idu_proyecto}_${nom_aplicacion}.pdf`;
+      const finalFilePath = join(dirAplicacion, newPdfFileName);
+  
+      await fsExtra.ensureDir(dirAplicacion);
+  
+      const pdfBuffer = Buffer.from(file.buffer.data);
+      await fsExtra.writeFile(finalFilePath, pdfBuffer);
 
-      const fileName = `checkmarx_${aplicacion.idu_proyecto}_${aplicacion.nom_aplicacion}.csv`;
-      const finalFilePath = join(`/sysx/bito/projects/${aplicacion.idu_proyecto}_${aplicacion.nom_aplicacion}`, fileName);
+      let dataCheckmarx: { message: string; error?: string; isValid?: boolean; checkmarx?: any };
+      dataCheckmarx = await this.callPython(nom_aplicacion, newPdfFileName, idu_proyecto);
 
-      await rename(`/sysx/bito/projects/${file.fieldname}`, finalFilePath);
+      if (dataCheckmarx.isValid) {
+        const scan = new Scan();
+        scan.nom_escaneo = this.encryptionService.encrypt(newPdfFileName);
+        scan.nom_directorio = this.encryptionService.encrypt(join(dirAplicacion, newPdfFileName));
+        scan.idu_aplicacion = idu_aplicacion;
+        await this.scanRepository.save(scan);
 
-      const checkmarx = new Checkmarx();
-      checkmarx.nom_checkmarx = fileName;
-      checkmarx.nom_directorio = finalFilePath;
-      checkmarx.application = aplicacion;
+        return { message: 'CSV Generado', isValid: true };
 
-      await this.checkmarxRepository.save(checkmarx);
-
-      return checkmarx;
-    } catch (error) {
-      throw new InternalServerErrorException('Error al subir CSV', error.message);
-    }
-  }
-
-  async convertPDF(createCheckmarxDto: any, file:fileRVIA) {
-    try {
-      const aplicacion = await this.client
-        //.send({ cmd: 'get_application' }, createCheckmarxDto.idu_aplicacion)
-        .send('aplicaciones.findOne', { idu_proyecto:Application  } )
-        .toPromise();
-
-        const filePath = `/tmp/${file.originalname}`; 
-
-        if (!Buffer.isBuffer(file.buffer)) {
-          throw new Error('El archivo no tiene un buffer válido');
-        }
-        await fs.promises.writeFile(filePath, file.buffer);
-
-
-      if (aplicacion.num_accion != 2) {
-        throw new UnprocessableEntityException('La aplicación debe tener la acción de Sanitización');
+      } else {
+        await fsExtra.remove(join(dirAplicacion, newPdfFileName));
+        return dataCheckmarx;
       }
 
-      const pdfFileRename = await this.moveAndRenamePdfFile(file, aplicacion);
-      const res = await this.callPython(aplicacion.nom_aplicacion, pdfFileRename, aplicacion);
-
-      return res.isValid
-        ? res
-        : { isValidProcess: false, messageRVIA: res.message };
     } catch (error) {
-      throw new InternalServerErrorException('Error al convertir PDF', error.message);
+      return { message: 'Error al convertir PDF.', isValid: false , error};
     }
   }
 
-  async findOneByApplication(idu_aplicacion: number) {
-
-    const aplicacion = await this.applicationRepository.findOne({ where: { idu_aplicacion } });
-
-    const checkmarx = await this.checkmarxRepository.findOneBy({ application: aplicacion });
-
-    // if(!checkmarx)
-    //   throw new NotFoundException(`Csv no encontrado `);
-    if(checkmarx){
-      checkmarx.nom_checkmarx = this.encryptionService.decrypt(checkmarx.nom_checkmarx);
-      checkmarx.nom_directorio = this.encryptionService.decrypt(checkmarx.nom_directorio);
-    }
-    
-    return !checkmarx ? [] : checkmarx;
-  }
-
-  async downloadCsvFile(id: number, response: any) {
-    const checkmarx = await this.checkmarxRepository.findOne({ where: { idu_checkmarx: id } });
-
-    if (!checkmarx) {
-      throw new NotFoundException('Archivo no encontrado');
-    }
-
-    const filePath = join(checkmarx.nom_directorio);
-
-    if (!existsSync(filePath)) {
-      throw new NotFoundException('El archivo no existe en el servidor');
-    }
-
-    const fileStream = createReadStream(filePath);
-
-    return fileStream;
-  }
-
-  private async callPython(nameApplication: string, namePdf: string, application: any) {
+  private async callPython(nameApplication: string, namePdf: string, idu_proyecto: any) {
     const scriptPath = join(__dirname, '../..', 'src/python-scripts', 'recovery.py');
     const execPromise = promisify(exec);
 
-    const command = `python3 ${scriptPath} "${nameApplication}" "${namePdf}" ${application.idu_proyecto}`;
+    const command = `python3 ${scriptPath} "${nameApplication}" "${namePdf}" ${idu_proyecto}`;
     try {
       const { stdout, stderr } = await execPromise(command);
 
@@ -131,13 +70,4 @@ export class RviadocService {
     }
   }
 
-  private async moveAndRenamePdfFile(file:fileRVIA, application: any): Promise<string> {
-    const dirAplicacion = `/sysx/bito/projects/${application.idu_proyecto}_${application.nom_aplicacion}`;
-    const newPdfFileName = `checkmarx_${application.idu_proyecto}_${application.nom_aplicacion}.pdf`;
-    const newPdfFilePath = join(dirAplicacion, newPdfFileName);
-
-    await fsExtra.move(file.fieldname, newPdfFilePath);
-
-    return newPdfFileName;
-  }
 }

@@ -1,94 +1,24 @@
-import { Controller, UseInterceptors, BadRequestException } from '@nestjs/common';
-import { MessagePattern, Payload, Ctx, RmqContext } from '@nestjs/microservices';
-import { FileInterceptor } from '@nestjs/platform-express';
-import * as fs from 'fs';
+import { Controller, BadRequestException } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+
 import { RviadocService } from './rviadoc.service';
-import { CreateRviadocDto } from './dto/create-rviadoc.dto';
-import { fileNamer } from './helper';
-import { fileFilterPDF } from './helper/fileFilterpdf';
-import { ValidationInterceptor } from '../interceptors/validation-file/validation-file.interceptor';
-import { fileRVIA } from '../rviadoc/interface/fileRVIA.interface';
-import { diskStorage } from 'multer';
+import { CreateRviadocDto } from './dto';
+import { fileRVIA } from './interface';
 
 @Controller()
 export class RviadocController {
   constructor(private readonly rviaDocService: RviadocService) {}
-
-  @MessagePattern('rviadoc.upload_csv')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      fileFilter: (req, file, cb) => {
-        const ext = file.originalname.split('.').pop();
-        if (file.mimetype === 'text/csv' && ext === 'csv') {
-          cb(null, true);
-        } else {
-          cb(new Error('Invalid file type'), false);
-        }
-      },
-      storage: diskStorage({
-        destination: (req, file, cb) => {
-          const dir = `/sysx/bito/projects`;
-          fs.mkdirSync(dir, { recursive: true });
-          cb(null, dir);
-        },
-        filename: fileNamer,
-      }),
-    }),
-    new ValidationInterceptor((dto: CreateRviadocDto) => {
-      return true; 
-    }),
-  )
-  async uploadCsv(@Payload() data: { dto: CreateRviadocDto; file:fileRVIA }, @Ctx() context: RmqContext) {
-    const { dto, file } = data;
-
-    if (!file) {
-      throw new BadRequestException('Debes cargar un archivo CSV');
-    }
-
-    return this.rviaDocService.create(dto, file);
-  }
   
   @MessagePattern('rviadoc.upload_pdf')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      fileFilter: fileFilterPDF,
-      storage: diskStorage({
-        destination: (req, file, cb) => {
-          const dir = `/sysx/bito/projects`;
-          fs.mkdirSync(dir, { recursive: true });
-          cb(null, dir);
-        },
-        filename: fileNamer,
-      }),
-    }),
-    new ValidationInterceptor((dto: CreateRviadocDto) => {
-      return true; 
-    }),
-  )
-  async uploadPdf(@Payload() data: { 
+  uploadPdf(@Payload() data: { 
     dto: CreateRviadocDto, 
     file: fileRVIA 
-  }, @Ctx() context: RmqContext) {
-    const { dto, file } = data;
-
-    if (!file) {
+  }) {
+    if (!data.file) {
       throw new BadRequestException('Debes cargar un archivo PDF');
     }
 
-    return this.rviaDocService.convertPDF(dto,  data.file);
+    return this.rviaDocService.convertPDF(data.dto.idu_proyecto, data.dto.nom_aplicacion,data.dto.idu_aplicacion, data.file);
   }
 
-  @MessagePattern('rviadoc.find_one')
-  async findOneByApplication(@Payload() data: { id: number }) {
-    const { id } = data;
-    
-    return this.rviaDocService.findOneByApplication(id); 
-  } 
-
-  @MessagePattern('rviadoc.download_csv')
-  async downloadCsv(@Payload() data: { id: number; response: any }) {
-    const { id, response } = data;
-
-    return this.rviaDocService.downloadCsvFile(id, response);
-  }
 }
