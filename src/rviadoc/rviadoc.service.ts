@@ -56,7 +56,7 @@ export class RviadocService {
         .send('aplicaciones.findOne', { idu_proyecto:Application  } )
         .toPromise();
 
-        const filePath = `/path/to/storage/${file.originalname}`; 
+        const filePath = `/tmp/${file.originalname}`; 
 
         if (!Buffer.isBuffer(file.buffer)) {
           throw new Error('El archivo no tiene un buffer válido');
