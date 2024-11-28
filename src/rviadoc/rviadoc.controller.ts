@@ -2,12 +2,13 @@ import { Controller, UseInterceptors, BadRequestException } from '@nestjs/common
 import { MessagePattern, Payload, Ctx, RmqContext } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as fs from 'fs';
-import { diskStorage } from 'multer';
 import { RviadocService } from './rviadoc.service';
 import { CreateRviadocDto } from './dto/create-rviadoc.dto';
 import { fileNamer } from './helper';
 import { fileFilterPDF } from './helper/fileFilterpdf';
 import { ValidationInterceptor } from '../interceptors/validation-file/validation-file.interceptor';
+import { fileRVIA } from '../rviadoc/interface/fileRVIA.interface';
+import { diskStorage } from 'multer';
 
 @Controller()
 export class RviadocController {
@@ -37,7 +38,7 @@ export class RviadocController {
       return true; 
     }),
   )
-  async uploadCsv(@Payload() data: { dto: CreateRviadocDto; file: Express.Multer.File }, @Ctx() context: RmqContext) {
+  async uploadCsv(@Payload() data: { dto: CreateRviadocDto; file:fileRVIA }, @Ctx() context: RmqContext) {
     const { dto, file } = data;
 
     if (!file) {
@@ -46,7 +47,7 @@ export class RviadocController {
 
     return this.rviaDocService.create(dto, file);
   }
-
+  
   @MessagePattern('rviadoc.upload_pdf')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -64,14 +65,17 @@ export class RviadocController {
       return true; 
     }),
   )
-  async uploadPdf(@Payload() data: { dto: CreateRviadocDto; file: Express.Multer.File }, @Ctx() context: RmqContext) {
+  async uploadPdf(@Payload() data: { 
+    dto: CreateRviadocDto, 
+    file: fileRVIA 
+  }, @Ctx() context: RmqContext) {
     const { dto, file } = data;
 
     if (!file) {
       throw new BadRequestException('Debes cargar un archivo PDF');
     }
 
-    return this.rviaDocService.convertPDF(dto, file);
+    return this.rviaDocService.convertPDF(dto,  data.file);
   }
 
   @MessagePattern('rviadoc.find_one')

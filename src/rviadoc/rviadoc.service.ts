@@ -12,6 +12,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
 import { Application } from './dto/application.entity';
 import { Checkmarx } from './dto/checkmarx.entity';
+import { fileRVIA } from './interface/fileRVIA.interface';
 
 @Injectable()
 export class RviadocService {
@@ -24,7 +25,7 @@ export class RviadocService {
     @InjectRepository(Application) private readonly applicationRepository: Repository<Application>,
   ) {  }
 
-  async create(createCheckmarxDto: any, file: Express.Multer.File) {
+  async create(createCheckmarxDto: any, file:fileRVIA) {
     try {
       const aplicacion = await this.client
         .send({ cmd: 'get_application' }, createCheckmarxDto.idu_aplicacion)
@@ -33,7 +34,7 @@ export class RviadocService {
       const fileName = `checkmarx_${aplicacion.idu_proyecto}_${aplicacion.nom_aplicacion}.csv`;
       const finalFilePath = join(`/sysx/bito/projects/${aplicacion.idu_proyecto}_${aplicacion.nom_aplicacion}`, fileName);
 
-      await rename(`/sysx/bito/projects/${file.filename}`, finalFilePath);
+      await rename(`/sysx/bito/projects/${file.fieldname}`, finalFilePath);
 
       const checkmarx = new Checkmarx();
       checkmarx.nom_checkmarx = fileName;
@@ -48,7 +49,7 @@ export class RviadocService {
     }
   }
 
-  async convertPDF(createCheckmarxDto: any, file: Express.Multer.File) {
+  async convertPDF(createCheckmarxDto: any, file:fileRVIA) {
     try {
       const aplicacion = await this.client
         .send({ cmd: 'get_application' }, createCheckmarxDto.idu_aplicacion)
@@ -121,12 +122,12 @@ export class RviadocService {
     }
   }
 
-  private async moveAndRenamePdfFile(file: Express.Multer.File, application: any): Promise<string> {
+  private async moveAndRenamePdfFile(file:fileRVIA, application: any): Promise<string> {
     const dirAplicacion = `/sysx/bito/projects/${application.idu_proyecto}_${application.nom_aplicacion}`;
     const newPdfFileName = `checkmarx_${application.idu_proyecto}_${application.nom_aplicacion}.pdf`;
     const newPdfFilePath = join(dirAplicacion, newPdfFileName);
 
-    await fsExtra.move(file.path, newPdfFilePath);
+    await fsExtra.move(file.fieldname, newPdfFilePath);
 
     return newPdfFileName;
   }
