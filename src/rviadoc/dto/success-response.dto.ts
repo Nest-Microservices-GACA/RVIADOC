@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Rviadoc } from '../entities/rviadoc.entity';
+import { Checkmarx } from './checkmarx.entity';
 
-class RviadocDto {
+class CheckmarxDto {
   @ApiProperty({ example: 'encryptedFileName', description: 'Nombre del archivo cifrado' })
   nom_checkmarx: string;
 
@@ -19,6 +19,6 @@ export class SuccessResponse {
   @ApiProperty({ example: true, description: 'Indica si la operación fue válida' })
   isValid: boolean;
 
-  @ApiProperty({ type: RviadocDto, description: 'Objeto Checkmarx generado' })
-  checkmarx: Rviadoc;
+  @ApiProperty({ type: CheckmarxDto, description: 'Objeto Checkmarx generado' })
+  checkmarx: Checkmarx;
 }

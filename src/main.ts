@@ -5,16 +5,12 @@ import { envs } from './config';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
-    {
-      transport: Transport.TCP,
-      options: {
-        port: envs.port,
-      }, 
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+    transport: Transport.NATS,
+    options: {
+      servers: envs.natsServers,
     },
-  ); 
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -22,10 +18,8 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-
-  console.log('RVIADOC-MS - Testing log');
-
+  console.log(`RVIADOC - MS - ${envs.port}`);
   await app.listen();
-
 }
+
 bootstrap();

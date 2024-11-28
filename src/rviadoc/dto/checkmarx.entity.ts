@@ -1,12 +1,13 @@
 import { ApiHideProperty, ApiProperty } from "@nestjs/swagger";
+import { Application } from "./application.entity";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('tbl_checkmarx')
-export class Rviadoc {
+export class Checkmarx {
 
     @ApiProperty({ 
         example: "1",
-        description: "rviadoc ID",
+        description: "Checkmarx ID",
         uniqueItems:true
      })
     @PrimaryGeneratedColumn('identity')
@@ -26,4 +27,11 @@ export class Rviadoc {
     @ApiProperty()
     @Column({type: 'varchar', length:255})
     nom_directorio: string;
+
+    // @ApiProperty()
+    @ManyToOne(() => Application, application => application.scans, { nullable: false })
+    @ApiHideProperty()
+    @JoinColumn({ name: 'idu_aplicacion' })
+    application: Application;
+
 }

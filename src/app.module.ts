@@ -1,8 +1,16 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { envs } from './config';
-import { ConfigService } from '@nestjs/config';
 import { RviadocModule } from './rviadoc/rviadoc.module';
+import { Applicationstatus } from './rviadoc/dto/applicationstatus.entity';
+import { Application, CreateRviadocDto } from './rviadoc/dto';
+import { Checkmarx } from './rviadoc/dto/checkmarx.entity';
+import { Cost } from './rviadoc/dto/cost.entity';
+import { Position } from './rviadoc/dto/position.entity';
+import { Scan } from './rviadoc/dto/scan.entity';
+import { Sourcecode } from './rviadoc/dto/sourcecode.entity';
+import { User } from './rviadoc/dto/user.entity';
+import { UsersApplication } from './rviadoc/dto/users-application.entity';
 
 @Module({
   imports: [
@@ -14,11 +22,24 @@ import { RviadocModule } from './rviadoc/rviadoc.module';
       username: envs.dbUsername,
       password: envs.dbPassword,
       autoLoadEntities: true,
-      synchronize:false
+      synchronize:false,
+      entities: 
+      [
+        Application, 
+        Applicationstatus,
+        Checkmarx,
+        Cost,
+        CreateRviadocDto,
+        Position,
+        Scan,
+        Sourcecode,
+        User,
+        UsersApplication,
+      ]
     }),
     RviadocModule,    
   ],
   controllers: [],
-  providers: [ConfigService],
+  providers: [],
 })
 export class AppModule {}

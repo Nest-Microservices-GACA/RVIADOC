@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { join } from 'path';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,21 +8,21 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fsExtra from 'fs-extra';
 import { ClientProxy } from '@nestjs/microservices';
-import { ConfigService } from '@nestjs/config';
-import { Rviadoc } from './entities/rviadoc.entity';
+
+import { NATS_SERVICE } from 'src/config';
+import { Application } from './dto/application.entity';
+import { Checkmarx } from './dto/checkmarx.entity';
 
 @Injectable()
-export class RviaDocService {
+export class RviadocService {
   private readonly crviaEnvironment: number;
+    encryptionService: any;
 
   constructor(
-    @InjectRepository(Rviadoc)
-    private readonly checkmarxRepository: Repository<Rviadoc>,
-    private readonly configService: ConfigService,
-    private readonly client: ClientProxy // Cliente para comunicarse con otros microservicios
-  ) {
-    this.crviaEnvironment = Number(this.configService.get('RVIA_ENVIRONMENT'));
-  }
+    @InjectRepository(Checkmarx) private readonly checkmarxRepository: Repository<Checkmarx>,
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    @InjectRepository(Application) private readonly applicationRepository: Repository<Application>,
+  ) {  }
 
   async create(createCheckmarxDto: any, file: Express.Multer.File) {
     try {
@@ -35,10 +35,10 @@ export class RviaDocService {
 
       await rename(`/sysx/bito/projects/${file.filename}`, finalFilePath);
 
-      const checkmarx = new Rviadoc();
+      const checkmarx = new Checkmarx();
       checkmarx.nom_checkmarx = fileName;
       checkmarx.nom_directorio = finalFilePath;
-      //checkmarx.application = aplicacion;
+      checkmarx.application = aplicacion;
 
       await this.checkmarxRepository.save(checkmarx);
 
@@ -69,17 +69,20 @@ export class RviaDocService {
     }
   }
 
-  async findOneByApplication(id: number) {
-    const aplicacion = await this.client.send({ cmd: 'get_application' }, id).toPromise();
-    /*
-    const checkmarx = await this.checkmarxRepository.findOne({ where: { application: aplicacion } });
+  async findOneByApplication(idu_aplicacion: number) {
 
-    if (!checkmarx) {
-      throw new NotFoundException('CSV no encontrado');
+    const aplicacion = await this.applicationRepository.findOne({ where: { idu_aplicacion } });
+
+    const checkmarx = await this.checkmarxRepository.findOneBy({ application: aplicacion });
+
+    // if(!checkmarx)
+    //   throw new NotFoundException(`Csv no encontrado `);
+    if(checkmarx){
+      checkmarx.nom_checkmarx = this.encryptionService.decrypt(checkmarx.nom_checkmarx);
+      checkmarx.nom_directorio = this.encryptionService.decrypt(checkmarx.nom_directorio);
     }
-
-    return checkmarx;
-    */
+    
+    return !checkmarx ? [] : checkmarx;
   }
 
   async downloadCsvFile(id: number, response: any) {

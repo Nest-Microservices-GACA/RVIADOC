@@ -3,16 +3,15 @@ import { MessagePattern, Payload, Ctx, RmqContext } from '@nestjs/microservices'
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as fs from 'fs';
 import { diskStorage } from 'multer';
-
-import { RviaDocService } from './rviadoc.service';
+import { RviadocService } from './rviadoc.service';
 import { CreateRviadocDto } from './dto/create-rviadoc.dto';
 import { fileNamer } from './helper';
 import { fileFilterPDF } from './helper/fileFilterpdf';
 import { ValidationInterceptor } from '../interceptors/validation-file/validation-file.interceptor';
 
 @Controller()
-export class RviaDocController {
-  constructor(private readonly rviaDocService: RviaDocService) {}
+export class RviadocController {
+  constructor(private readonly rviaDocService: RviadocService) {}
 
   @MessagePattern('rviadoc.upload_csv')
   @UseInterceptors(
@@ -76,13 +75,16 @@ export class RviaDocController {
   }
 
   @MessagePattern('rviadoc.find_one')
-  async findOneByApplication(@Payload() id: number) {
-    return this.rviaDocService.findOneByApplication(id);
-  }
+  async findOneByApplication(@Payload() data: { id: number }) {
+    const { id } = data;
+    
+    return this.rviaDocService.findOneByApplication(id); 
+  } 
 
   @MessagePattern('rviadoc.download_csv')
   async downloadCsv(@Payload() data: { id: number; response: any }) {
     const { id, response } = data;
+
     return this.rviaDocService.downloadCsvFile(id, response);
   }
 }

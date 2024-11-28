@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
 import { envs } from 'src/config';
 
@@ -9,7 +8,7 @@ export class CommonService {
   private readonly algorithm = 'aes-256-cbc';
   private readonly key: Buffer;
 
-  constructor(private configService: ConfigService) {
+  constructor() {
     const secretKey = envs.secretKey;
     this.key = createHash('sha256').update(secretKey).digest().slice(0, 32);
   }
