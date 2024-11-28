@@ -8,7 +8,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fsExtra from 'fs-extra';
 import { ClientProxy } from '@nestjs/microservices';
-
+import * as fs from 'fs';
 import { NATS_SERVICE } from 'src/config';
 import { Application } from './dto/application.entity';
 import { Checkmarx } from './dto/checkmarx.entity';
@@ -52,8 +52,17 @@ export class RviadocService {
   async convertPDF(createCheckmarxDto: any, file:fileRVIA) {
     try {
       const aplicacion = await this.client
-        .send({ cmd: 'get_application' }, createCheckmarxDto.idu_aplicacion)
+        //.send({ cmd: 'get_application' }, createCheckmarxDto.idu_aplicacion)
+        .send('aplicaciones.findOne', { idu_proyecto:Application  } )
         .toPromise();
+
+        const filePath = `/path/to/storage/${file.originalname}`; 
+
+        if (!Buffer.isBuffer(file.buffer)) {
+          throw new Error('El archivo no tiene un buffer válido');
+        }
+        await fs.promises.writeFile(filePath, file.buffer);
+
 
       if (aplicacion.num_accion != 2) {
         throw new UnprocessableEntityException('La aplicación debe tener la acción de Sanitización');
