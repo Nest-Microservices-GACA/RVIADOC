@@ -1,5 +1,5 @@
 import { Transform } from "class-transformer";
-import { IsNumber, IsString } from "class-validator";
+import { IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateRviadocDto {
 
@@ -16,4 +16,8 @@ export class CreateRviadocDto {
 
     @IsString()
     pdfFile: string;
+
+    @IsOptional()
+    @IsNumber()
+    optionUpload: number = 0; //0 = subir con aplicacion 1 = subir solo escaneo
 }

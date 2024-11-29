@@ -11,11 +11,8 @@ export class RviadocController {
   
   @MessagePattern('rviadoc.upload_pdf')
   uploadPdf(@Payload() data: CreateRviadocDto) {
-    // if (!data.file) {
-    //   throw new BadRequestException('Debes cargar un archivo PDF');
-    // }
-    // path_pdf
-    return this.rviaDocService.convertPDF(data.idu_proyecto, data.idu_aplicacion,data.nom_aplicacion,data.pdfFile);
+
+    return this.rviaDocService.convertPDF(data);
   }
 
 }

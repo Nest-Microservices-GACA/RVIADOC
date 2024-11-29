@@ -13,6 +13,7 @@ import { fileRVIA } from './interface';
 import { envs } from 'src/config';
 import { RpcException } from '@nestjs/microservices';
 import { Checkmarx } from './entities/checkmarx.entity';
+import { CreateRviadocDto } from './dto';
 
 @Injectable()
 export class RviadocService {
@@ -23,9 +24,12 @@ export class RviadocService {
     private readonly encryptionService: CommonService
   ) {  }
 
-  async convertPDF(idu_proyecto: number, idu_aplicacion:number, nom_aplicacion: string,pdfFile: string) {
+  async convertPDF(createRviadocDto:CreateRviadocDto) {
+
+    const { idu_aplicacion, idu_proyecto, nom_aplicacion, pdfFile, optionUpload  } = createRviadocDto;
 
     try {
+
       const dirName = envs.pathProjects;
       const tempPDF = join(dirName, pdfFile);
 
@@ -54,12 +58,39 @@ export class RviadocService {
         scan.nom_directorio = this.encryptionService.encrypt(join(dirAplicacion, newNamePDF));
         scan.idu_aplicacion = idu_aplicacion;
         await this.scanRepository.save(scan);
+        
+        if(optionUpload){
 
-        return { message: 'CSV Generado', isValid: true };
+          return { 
+            isProcessStarted: true, 
+            message: "Proceso IA Iniciado Correctamente" 
+        };
+
+        }{
+          return { 
+            message: 'CSV Generado', 
+            isValid: true 
+          };
+        }
+
 
       } else {
-        await fsExtra.remove(join(dirAplicacion, newNamePDF));
-        return dataCheckmarx;
+
+        if(optionUpload){
+          await fsExtra.remove(join(dirAplicacion, newNamePDF));
+          return { 
+            isProcessStarted: false, 
+            message: "No se inició el Proceso IA" ,
+            dataCheckmarx
+        };
+
+        }{
+          await fsExtra.remove(join(dirAplicacion, newNamePDF));
+          return dataCheckmarx;
+        }
+
+
+
       }
 
     } catch (error) {
