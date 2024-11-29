@@ -89,6 +89,8 @@ export class RviadocService {
       checkmarx.nom_directorio = this.encryptionService.encrypt(finalFilePath);
       checkmarx.idu_aplicacion = idu_aplicacion;
 
+      await this.checkmarxRepository.save(checkmarx);
+
       return { message: 'CSV Generado', isValid: true };
     } catch (error) {
       return { message: 'Error al ejecutar el script.', error, isValid: false };
