@@ -39,7 +39,6 @@ export class RviadocService {
       }
 
       const newNamePDF = await this.moveAndRenamePdfFile( idu_proyecto, idu_aplicacion, nom_aplicacion, pdfFile );
-      console.log("newNamePDF",newNamePDF)
 
 
       const dirAplicacion = `${dirName}/${idu_proyecto}_${nom_aplicacion}`;
