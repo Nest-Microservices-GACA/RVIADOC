@@ -5,15 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonModule } from 'src/common/common.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { envs, NATS_SERVICE } from 'src/config';
-import { Checkmarx } from './dto/checkmarx.entity';
-import { Application } from './dto/application.entity';
 import { Scan } from './entities/scan.entity';
+import { Checkmarx } from './entities/checkmarx.entity';
 
 @Module({
   controllers: [RviadocController],
   providers: [RviadocService],
   imports:[
-    TypeOrmModule.forFeature([ Checkmarx, Application, Scan ]),
+    TypeOrmModule.forFeature([ Checkmarx, Scan ]),
     CommonModule,
     ClientsModule.register([
       { 

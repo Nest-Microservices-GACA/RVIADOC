@@ -67,7 +67,7 @@ export class RviadocService {
     }
   }
 
-  private async callPython(nameApplication: string, namePdf: string, idu_proyecto: any, idu_aplicacion: number) {
+  private async callPython(nameApplication: string, namePdf: string, idu_proyecto: any, idaplicacion: number) {
     const scriptPath = join(__dirname, '../..', 'src/python-scripts', 'recovery.py');
     const execPromise = promisify(exec);
 
@@ -87,7 +87,8 @@ export class RviadocService {
       const checkmarx = new Checkmarx();
       checkmarx.nom_checkmarx = this.encryptionService.encrypt(fileName);
       checkmarx.nom_directorio = this.encryptionService.encrypt(finalFilePath);
-      checkmarx.idu_aplicacion = idu_aplicacion;
+      checkmarx.idu_aplicacion = idaplicacion;
+
 
       await this.checkmarxRepository.save(checkmarx);
 

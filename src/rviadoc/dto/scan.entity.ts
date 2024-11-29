@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { Application } from './application.entity';
+// import { Application } from './application.entity';
 
 @Entity('tbl_escaneos')
 export class Scan {
@@ -12,8 +12,11 @@ export class Scan {
     @Column({type: 'varchar', length:20})
     nom_directorio: string;
 
-    @ManyToOne(() => Application, application => application.scans, { nullable: false })
-    @JoinColumn({ name: 'idu_aplicacion' })
-    application: Application;
+    @Column({
+        type: 'int',
+        name: 'idu_aplicacion',
+    })
+    idu_aplicacion: number;
+
 
 }
