@@ -10,15 +10,12 @@ export class RviadocController {
   constructor(private readonly rviaDocService: RviadocService) {}
   
   @MessagePattern('rviadoc.upload_pdf')
-  uploadPdf(@Payload() data: { 
-    dto: CreateRviadocDto, 
-    file: fileRVIA 
-  }) {
-    if (!data.file) {
-      throw new BadRequestException('Debes cargar un archivo PDF');
-    }
-
-    return this.rviaDocService.convertPDF(data.dto.idu_proyecto, data.dto.nom_aplicacion,data.dto.idu_aplicacion, data.file);
+  uploadPdf(@Payload() data: CreateRviadocDto) {
+    // if (!data.file) {
+    //   throw new BadRequestException('Debes cargar un archivo PDF');
+    // }
+    // path_pdf
+    return this.rviaDocService.convertPDF(data.idu_proyecto, data.idu_aplicacion,data.nom_aplicacion,data.pdfFile);
   }
 
 }

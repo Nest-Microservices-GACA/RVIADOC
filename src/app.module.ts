@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { envs } from './config';
 import { RviadocModule } from './rviadoc/rviadoc.module';
 import { Applicationstatus } from './rviadoc/dto/applicationstatus.entity';
-import { Application, CreateRviadocDto } from './rviadoc/dto';
+import { CreateRviadocDto } from './rviadoc/dto';
 import { Checkmarx } from './rviadoc/dto/checkmarx.entity';
 import { Cost } from './rviadoc/dto/cost.entity';
 import { Position } from './rviadoc/dto/position.entity';
@@ -25,7 +25,6 @@ import { UsersApplication } from './rviadoc/dto/users-application.entity';
       synchronize:false,
       entities: 
       [
-        Application, 
         Applicationstatus,
         Checkmarx,
         Cost,

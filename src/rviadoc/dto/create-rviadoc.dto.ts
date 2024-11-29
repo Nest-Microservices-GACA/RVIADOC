@@ -13,4 +13,7 @@ export class CreateRviadocDto {
 
     @IsString()
     nom_aplicacion: string;
+
+    @IsString()
+    pdfFile: string;
 }

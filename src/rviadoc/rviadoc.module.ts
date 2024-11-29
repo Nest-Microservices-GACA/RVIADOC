@@ -25,8 +25,6 @@ import { Scan } from './entities/scan.entity';
       },
     ]),
   ],
-  exports:[
-    TypeOrmModule
-  ]
+
 })
 export class RviadocModule {}
