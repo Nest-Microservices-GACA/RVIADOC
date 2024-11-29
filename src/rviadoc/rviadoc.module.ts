@@ -7,12 +7,13 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { envs, NATS_SERVICE } from 'src/config';
 import { Checkmarx } from './dto/checkmarx.entity';
 import { Application } from './dto/application.entity';
+import { Scan } from './entities/scan.entity';
 
 @Module({
   controllers: [RviadocController],
   providers: [RviadocService],
   imports:[
-    TypeOrmModule.forFeature([ Checkmarx, Application ]),
+    TypeOrmModule.forFeature([ Checkmarx, Application, Scan ]),
     CommonModule,
     ClientsModule.register([
       { 
@@ -24,8 +25,6 @@ import { Application } from './dto/application.entity';
       },
     ]),
   ],
-  exports:[
-    TypeOrmModule
-  ]
+
 })
 export class RviadocModule {}

@@ -2,37 +2,33 @@ import { ApiHideProperty, ApiProperty } from "@nestjs/swagger";
 
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Application } from "../dto/application.entity";
+import { Type } from "class-transformer";
+import { IsNumber } from "class-validator";
 
 @Entity('tbl_checkmarx')
 export class Checkmarx {
 
-    @ApiProperty({ 
-        example: "1",
-        description: "Checkmarx ID",
-        uniqueItems:true
-     })
+
     @PrimaryGeneratedColumn('identity')
     idu_checkmarx: number;
 
-    @ApiProperty({ 
-        example: "checkmarx_IDPROYECTO_NOMBRE-APLICACIÓN.csv",
-        description: "Nombre del archivo"
-     })
+
     @Column({type: 'varchar', length:255})
     nom_checkmarx: string;
 
-    @ApiProperty({ 
-        example: "/sysx/bito/projects/NOMBRE-APLICACIÓN/checkmarx_IDPROYECTO_NOMBRE-APLICACIÓN.csv",
-        description: "Directorio del archivo"
-     })
-    @ApiProperty()
+
     @Column({type: 'varchar', length:255})
     nom_directorio: string;
 
+    @Column()
+    @IsNumber()
+    @Type(() => Number)
+    idu_aplicacion: number;  
+
     // @ApiProperty()
-    @ManyToOne(() => Application, application => application.scans, { nullable: false })
-    @ApiHideProperty()
-    @JoinColumn({ name: 'idu_aplicacion' })
-    application: Application;
+    // @ManyToOne(() => Application, application => application.scans, { nullable: false })
+    // @ApiHideProperty()
+    // @JoinColumn({ name: 'idu_aplicacion' })
+    // application: Application;
 
 }
